@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { productsApi } from '@/lib/api';
-import { 
-  Plus, 
-  MagnifyingGlass, 
-  Trash, 
+import {
+  Plus,
+  MagnifyingGlass,
+  Trash,
   X,
   Warning,
-  Selection
+  Package,
+  CircleNotch,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,7 @@ export function ProductManager() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -52,6 +54,7 @@ export function ProductManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     try {
       await productsApi.create({
         name: formData.name,
@@ -65,11 +68,13 @@ export function ProductManager() {
       loadProducts();
     } catch (error) {
       console.error('Failed to create product:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('DELETE_THIS_DATA_PERMANENTLY?')) return;
+    if (!confirm('Are you sure you want to delete this product?')) return;
     try {
       await productsApi.delete(id);
       loadProducts();
@@ -78,185 +83,217 @@ export function ProductManager() {
     }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.category.toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64 border-4 border-black animate-pulse bg-white">
-      <span className="text-xl font-black uppercase tracking-[0.5em]">Inventory_Loading_...</span>
+    <div className="space-y-4 animate-pulse">
+      <div className="h-11 pos-skeleton rounded-lg" />
+      <div className="pos-card h-64 pos-skeleton" />
     </div>
   );
 
   return (
-    <div className="space-y-10">
-      {/* Action Bar */}
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="flex-1 relative brutal-card bg-white p-0">
-          <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-black" size={24} weight="bold" />
-          <input
-            placeholder="SEARCH_INVENTORY_QUERY..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-16 pl-14 bg-white text-sm font-black uppercase tracking-tight focus:outline-none focus:bg-[#D4FF00] transition-none placeholder:text-black/20 font-mono"
-          />
+    <div className="space-y-5">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Products</h2>
+          <p className="text-sm text-slate-500 mt-0.5">Manage your inventory and product catalog</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowForm(!showForm)}
           className={cn(
-            "h-16 px-10 font-black uppercase text-sm tracking-[0.2em] flex items-center justify-center gap-4 transition-none border-4 border-black shadow-[6px_6px_0px_0px_#000] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none",
-            showForm ? "bg-white text-black" : "bg-black text-white hover:bg-[#D4FF00] hover:text-black"
+            "pos-btn-primary flex items-center gap-2",
+            showForm && "bg-slate-600 hover:bg-slate-700"
           )}
         >
-          {showForm ? <X size={24} weight="bold" /> : <Plus size={24} weight="bold" />}
-          {showForm ? 'Abort_Write' : 'Add_New_Entry'}
+          {showForm ? <X size={16} /> : <Plus size={16} weight="bold" />}
+          {showForm ? 'Cancel' : 'Add Product'}
         </button>
       </div>
 
-      {/* Entry Form */}
+      {/* Add Product Form */}
       {showForm && (
-        <div className="brutal-card-lg bg-white p-0 animate-in slide-in-from-top-4 duration-300">
-          <div className="p-6 border-b-4 border-black bg-black text-white flex justify-between items-center italic">
-            <h3 className="text-lg font-black uppercase tracking-tighter">New_Product_Write_Interface</h3>
-            <p className="text-xs font-bold opacity-50 uppercase tracking-widest">Buffer_Memory_Locked</p>
+        <div className="pos-card overflow-hidden animate-in slide-in-from-top-2 duration-200">
+          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-2.5">
+            <Package size={16} className="text-slate-400" />
+            <h3 className="text-sm font-semibold text-slate-900">New Product</h3>
           </div>
-          <form onSubmit={handleSubmit} className="p-10 space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <div className="space-y-3">
-                <label className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">Label_Identifier</label>
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="pos-label">Product name *</label>
                 <input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="brutal-input w-full"
-                  placeholder="NAME_REQUIRED"
+                  placeholder="e.g. Cappuccino"
+                  className="pos-input"
                 />
               </div>
-              <div className="space-y-3">
-                <label className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">Class_Category</label>
+              <div>
+                <label className="pos-label">Category *</label>
                 <input
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   required
-                  className="brutal-input w-full"
-                  placeholder="CATEGORY_REQUIRED"
+                  placeholder="e.g. Coffee, Food"
+                  className="pos-input"
                 />
               </div>
-              <div className="space-y-3">
-                <label className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">Unit_Price_Value</label>
+              <div>
+                <label className="pos-label">Price (Rp) *</label>
                 <input
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   required
-                  className="brutal-input w-full"
-                  placeholder="VALUE_RP"
+                  placeholder="0"
+                  min="0"
+                  className="pos-input"
                 />
               </div>
-              <div className="space-y-3">
-                <label className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">Initial_Capacity_QTY</label>
+              <div>
+                <label className="pos-label">Initial stock *</label>
                 <input
                   type="number"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                   required
-                  className="brutal-input w-full"
-                  placeholder="QUANTITY"
+                  placeholder="0"
+                  min="0"
+                  className="pos-input"
                 />
               </div>
             </div>
-            <div className="space-y-3">
-              <label className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">Context_Metadata</label>
+            <div>
+              <label className="pos-label">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="brutal-input w-full h-32 resize-none"
+                placeholder="Optional product description..."
+                className="pos-textarea h-24"
               />
             </div>
-            <div className="flex justify-end gap-6 pt-6 border-t-4 border-black">
-              <button type="button" onClick={() => setShowForm(false)} className="px-10 py-4 font-black uppercase text-xs hover:bg-[#F4F4F0] border-4 border-black transition-none">Discard_Data</button>
-              <button type="submit" className="px-12 py-4 bg-black text-white font-black uppercase text-xs hover:bg-[#D4FF00] hover:text-black border-4 border-black shadow-[6px_6px_0px_0px_#000] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none transition-none italic">Commit_to_DB</button>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="pos-btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="pos-btn-primary flex items-center gap-2"
+              >
+                {saving && <CircleNotch size={14} className="animate-spin" />}
+                Save product
+              </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Inventory List */}
-      <div className="brutal-card p-0 bg-white overflow-hidden">
-        <div className="p-6 border-b-4 border-black bg-[#F4F4F0] flex justify-between items-center italic">
-          <h3 className="text-xl font-black uppercase tracking-tighter underline decoration-4 underline-offset-4">Inventory_Ledger</h3>
-          <div className="bg-black text-white px-4 py-2 text-xs font-black uppercase tracking-widest">
-            ROWS: {filteredProducts.length}
-          </div>
+      {/* Search Bar */}
+      <div className="relative">
+        <MagnifyingGlass
+          size={16}
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+        />
+        <input
+          placeholder="Search products by name or category..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pos-input pl-10 w-full md:w-80"
+        />
+      </div>
+
+      {/* Products Table */}
+      <div className="pos-card overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-900">Inventory</h3>
+          <span className="pos-badge-gray">{filteredProducts.length} items</span>
         </div>
-        
+
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="w-full">
             <thead>
-              <tr className="bg-black text-white">
-                <th className="brutal-table-header text-left">Product_Meta</th>
-                <th className="brutal-table-header text-center">Class</th>
-                <th className="brutal-table-header text-right">Price_Unit</th>
-                <th className="brutal-table-header text-center">Stock_Qty</th>
-                <th className="brutal-table-header text-center">Status</th>
-                <th className="brutal-table-header text-right">Ops</th>
+              <tr>
+                <th className="pos-table-header">Product</th>
+                <th className="pos-table-header">Category</th>
+                <th className="pos-table-header text-right">Price</th>
+                <th className="pos-table-header text-center">Stock</th>
+                <th className="pos-table-header text-center">Status</th>
+                <th className="pos-table-header text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y-4 divide-black">
+            <tbody>
               {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-[#D4FF00] hover:text-black transition-none group cursor-default">
-                  <td className="brutal-table-cell">
-                    <div className="flex items-center gap-6">
-                      <div className="w-14 h-14 border-4 border-black flex items-center justify-center font-black group-hover:bg-black group-hover:text-white shrink-0 text-xl">
-                        {product.name.charAt(0).toUpperCase()}
+                <tr key={product.id} className="hover:bg-slate-50 transition-colors duration-100">
+                  <td className="pos-table-cell">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0">
+                        <span className="text-sm font-semibold text-indigo-600">
+                          {product.name.charAt(0).toUpperCase()}
+                        </span>
                       </div>
                       <div>
-                        <p className="text-lg font-black uppercase tracking-tighter">{product.name}</p>
-                        <p className="text-[10px] font-bold opacity-60 uppercase truncate max-w-[300px] mt-1 italic tracking-widest">
-                          {product.description || 'NULL_DATA_FIELD'}
-                        </p>
+                        <p className="text-sm font-medium text-slate-900">{product.name}</p>
+                        {product.description && (
+                          <p className="text-xs text-slate-400 truncate max-w-[220px] mt-0.5">
+                            {product.description}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </td>
-                  <td className="brutal-table-cell text-center">
-                    <span className="brutal-badge group-hover:bg-black group-hover:text-white">
-                      {product.category}
+                  <td className="pos-table-cell">
+                    <span className="pos-badge-gray">{product.category}</span>
+                  </td>
+                  <td className="pos-table-cell text-right">
+                    <span className="text-sm font-semibold text-slate-900">
+                      Rp {product.price.toLocaleString('id-ID')}
                     </span>
                   </td>
-                  <td className="brutal-table-cell text-right font-black italic text-lg">
-                    {product.price.toLocaleString()}
-                  </td>
-                  <td className="brutal-table-cell text-center">
+                  <td className="pos-table-cell text-center">
                     <div className={cn(
-                      "font-black text-lg",
-                      product.stock < 10 ? "text-[#FF003C] group-hover:bg-black px-2 inline-block" : ""
+                      "inline-flex items-center gap-1.5 text-sm font-medium",
+                      product.stock < 10 ? "text-red-600" : "text-slate-700"
                     )}>
-                      {product.stock.toString().padStart(3, '0')}
-                      {product.stock < 10 && <Warning size={16} weight="bold" className="inline ml-2" />}
+                      {product.stock < 10 && (
+                        <Warning size={13} weight="fill" className="text-red-500" />
+                      )}
+                      {product.stock}
                     </div>
                   </td>
-                  <td className="brutal-table-cell text-center">
-                    <div className="flex items-center justify-center gap-3">
-                      <div className={cn("w-3 h-3 border-2 border-black", product.is_active ? "bg-[#00FF41]" : "bg-gray-300")} />
-                      <span className="text-[10px] font-black uppercase italic tracking-widest">
-                        {product.is_active ? 'ENABLED' : 'OFFLINE'}
-                      </span>
-                    </div>
+                  <td className="pos-table-cell text-center">
+                    {product.is_active
+                      ? <span className="pos-badge-green">Active</span>
+                      : <span className="pos-badge-gray">Inactive</span>
+                    }
                   </td>
-                  <td className="brutal-table-cell text-right">
+                  <td className="pos-table-cell text-right">
                     <button
                       onClick={() => handleDelete(product.id)}
-                      className="p-3 border-4 border-black bg-white text-black group-hover:bg-[#FF003C] group-hover:text-white transition-none"
+                      className="p-2 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors duration-150"
+                      title="Delete product"
                     >
-                      <Trash size={20} weight="bold" />
+                      <Trash size={15} />
                     </button>
                   </td>
                 </tr>
               ))}
               {filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="brutal-table-cell text-center py-32 text-gray-300 tracking-[1em] font-black uppercase">NO_RECORDS_FOUND</td>
+                  <td colSpan={6} className="py-20 text-center">
+                    <Package size={28} className="text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-400">No products found</p>
+                  </td>
                 </tr>
               )}
             </tbody>

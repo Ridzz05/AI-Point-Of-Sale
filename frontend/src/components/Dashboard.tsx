@@ -3,15 +3,15 @@
 import { useState, useEffect } from 'react';
 import { transactionsApi } from '@/lib/api';
 import {
-  CurrencyDollar,
+  TrendUp,
   ShoppingCart,
   Clock,
-  ArrowRight,
   Receipt,
   Warning,
   Circle,
-  Lightning,
-  Monitor
+  ArrowRight,
+  Monitor,
+  CurrencyDollar,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
@@ -43,125 +43,182 @@ export function Dashboard() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64 border-4 border-black bg-white animate-pulse">
-      <span className="text-xl font-black uppercase tracking-[0.5em]">SYSTEM_INITIALIZING_...</span>
+    <div className="space-y-6 animate-pulse">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="pos-card p-6 h-32 pos-skeleton" />
+        ))}
+      </div>
+      <div className="pos-card h-80 pos-skeleton" />
     </div>
   );
 
+  const avgOrder = summary?.total_transactions
+    ? Math.round((summary.total_revenue || 0) / summary.total_transactions)
+    : 0;
+
   return (
-    <div className="space-y-12 animate-in fade-in duration-300">
-      {/* Top Section: Focal Point Revenue */}
-      <div className="brutal-card-lg p-10 bg-black text-white flex flex-col md:flex-row items-center justify-between gap-8">
-        <div className="space-y-4 text-center md:text-left">
-          <div className="flex items-center justify-center md:justify-start gap-2 text-[#D4FF00]">
-            <Lightning size={24} weight="fill" />
-            <span className="text-sm font-black uppercase tracking-[0.4em] font-mono">Realtime_Revenue_Stream</span>
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Page Header */}
+      <div>
+        <h2 className="text-xl font-semibold text-slate-900">Dashboard</h2>
+        <p className="text-sm text-slate-500 mt-0.5">
+          {mounted ? new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+        </p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Revenue Card */}
+        <div className="pos-card p-6 md:col-span-1">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-slate-500">Today's Revenue</p>
+            <div className="w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center">
+              <TrendUp size={18} className="text-indigo-600" weight="bold" />
+            </div>
           </div>
-          <h2 className="text-7xl md:text-9xl font-black tracking-tighter leading-none italic">
-            RP_{summary?.total_revenue?.toLocaleString() || '0'}
-          </h2>
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400">
-            METRIC_SYNCED: {mounted ? new Date().toLocaleTimeString() : '--:--:--'} // INTERVAL: 1S
+          <p className="text-3xl font-bold text-slate-900 tracking-tight">
+            Rp {(summary?.total_revenue || 0).toLocaleString('id-ID')}
+          </p>
+          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+            <Circle size={8} weight="fill" className="text-emerald-500" />
+            Live — updates every second
           </p>
         </div>
-        <div className="flex flex-col gap-4 w-full md:w-auto">
-          <div className="px-8 py-6 border-4 border-[#D4FF00] bg-black">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">TXN_COUNT</p>
-            <p className="text-4xl font-black">{summary?.total_transactions || '0'}</p>
+
+        {/* Transactions Card */}
+        <div className="pos-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-slate-500">Transactions</p>
+            <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center">
+              <ShoppingCart size={18} className="text-emerald-600" weight="bold" />
+            </div>
           </div>
-          <div className="px-8 py-6 border-4 border-white bg-white text-black">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">AVG_ORDER_VALUE</p>
-            <p className="text-3xl font-black italic">RP_{summary?.total_transactions ? Math.round(summary.total_revenue / summary.total_transactions).toLocaleString() : 0}</p>
+          <p className="text-3xl font-bold text-slate-900 tracking-tight">
+            {summary?.total_transactions || 0}
+          </p>
+          <p className="text-xs text-slate-400 mt-2">Total transactions today</p>
+        </div>
+
+        {/* Avg Order Value Card */}
+        <div className="pos-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-slate-500">Avg. Order Value</p>
+            <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center">
+              <CurrencyDollar size={18} className="text-amber-600" weight="bold" />
+            </div>
           </div>
+          <p className="text-3xl font-bold text-slate-900 tracking-tight">
+            Rp {avgOrder.toLocaleString('id-ID')}
+          </p>
+          <p className="text-xs text-slate-400 mt-2">Per transaction average</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Transaction Activity Column */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock size={20} weight="bold" />
-              <h3 className="text-lg font-black uppercase tracking-tighter italic">Recent_Activity_Log</h3>
+      {/* Bottom Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Recent Transactions Table */}
+        <div className="lg:col-span-2 pos-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Clock size={16} className="text-slate-400" />
+              <h3 className="text-sm font-semibold text-slate-900">Recent Activity</h3>
             </div>
-            <button className="text-[10px] font-black uppercase tracking-widest border-b-4 border-black hover:bg-[#D4FF00] hover:text-black px-2 transition-none">View_Full_Log</button>
+            <button className="text-xs text-indigo-600 font-medium hover:text-indigo-700 flex items-center gap-1 transition-colors">
+              View all <ArrowRight size={12} />
+            </button>
           </div>
 
-          <div className="brutal-card p-0 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-black text-white">
-                    <th className="brutal-table-header text-left">Ref_ID</th>
-                    <th className="brutal-table-header text-left">Timestamp</th>
-                    <th className="brutal-table-header text-right">Amount</th>
-                    <th className="brutal-table-header text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y-4 divide-black">
-                  {summary?.transactions?.slice(0, 5).map((tx: any) => (
-                    <tr key={tx.id} className="hover:bg-[#F4F4F0] transition-none group">
-                      <td className="brutal-table-cell font-mono">#{tx.id.toString().padStart(4, '0')}</td>
-                      <td className="brutal-table-cell">
-                        <span className="text-[10px] block opacity-60 font-mono">
-                          {mounted ? new Date(tx.created_at).toLocaleDateString() : '---'}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="pos-table-header">Reference</th>
+                  <th className="pos-table-header">Time</th>
+                  <th className="pos-table-header text-right">Amount</th>
+                  <th className="pos-table-header text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary?.transactions?.slice(0, 5).map((tx: any) => (
+                  <tr key={tx.id} className="hover:bg-slate-50 transition-colors duration-100">
+                    <td className="pos-table-cell">
+                      <span className="font-mono text-xs text-slate-500">
+                        #{tx.id.toString().padStart(4, '0')}
+                      </span>
+                    </td>
+                    <td className="pos-table-cell">
+                      <div className="flex flex-col">
+                        <span className="text-xs text-slate-700">
+                          {mounted ? new Date(tx.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : '—'}
                         </span>
-                        {mounted ? new Date(tx.created_at).toLocaleTimeString() : '---'}
-                      </td>
-                      <td className="brutal-table-cell text-right font-black italic">
-                        RP_{tx.total_amount.toLocaleString()}
-                      </td>
-                      <td className="brutal-table-cell text-center">
-                        <span className="brutal-badge bg-[#00FF41]">COMPLETED</span>
-                      </td>
-                    </tr>
-                  ))}
-                  {(!summary?.transactions || summary.transactions.length === 0) && (
-                    <tr>
-                      <td colSpan={4} className="brutal-table-cell text-center py-20 text-gray-300 tracking-[0.5em]">NO_DATA_LOGGED</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        <span className="text-xs text-slate-400">
+                          {mounted ? new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="pos-table-cell text-right">
+                      <span className="font-semibold text-slate-900">
+                        Rp {tx.total_amount.toLocaleString('id-ID')}
+                      </span>
+                    </td>
+                    <td className="pos-table-cell text-center">
+                      <span className="pos-badge-green">Completed</span>
+                    </td>
+                  </tr>
+                ))}
+                {(!summary?.transactions || summary.transactions.length === 0) && (
+                  <tr>
+                    <td colSpan={4} className="py-16 text-center text-sm text-slate-400">
+                      No transactions yet today
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* System Monitor Column */}
-        <div className="lg:col-span-1 space-y-8">
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <Monitor size={20} weight="bold" />
-              <h3 className="text-lg font-black uppercase tracking-tighter italic">System_Monitor</h3>
+        {/* Status Panel */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="pos-card p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Monitor size={16} className="text-slate-400" />
+              <h3 className="text-sm font-semibold text-slate-900">System Status</h3>
             </div>
 
             <div className="space-y-4">
-              <div className="brutal-card p-6 border-l-[16px] border-l-[#D4FF00]">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Memory_Usage</h4>
-                <div className="h-6 border-4 border-black bg-white overflow-hidden p-1">
-                  <div className="h-full bg-black w-[65%]" />
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs text-slate-500">Memory usage</p>
+                  <p className="text-xs font-medium text-slate-700">65%</p>
                 </div>
-                <div className="flex justify-between mt-2 text-[10px] font-black uppercase">
-                  <span>665.2MB / 1024MB</span>
-                  <span className="text-[#00FF41]">STABLE</span>
+                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full w-[65%] bg-indigo-500 rounded-full" />
                 </div>
               </div>
 
-              <div className="brutal-card p-6 border-l-[16px] border-l-[#FF003C]">
-                <div className="flex items-center gap-2 mb-2 text-[#FF003C]">
-                  <Warning size={16} weight="fill" />
-                  <h4 className="text-[10px] font-black uppercase tracking-widest">Inventory_Alert</h4>
-                </div>
-                <p className="text-sm font-black uppercase leading-tight italic">2_PRODUCTS_CRITICAL_STOCK</p>
-                <button className="mt-4 text-[10px] font-black uppercase tracking-widest bg-black text-white px-3 py-1.5 hover:bg-[#FF003C] transition-none">Resolve_Now</button>
+              <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                <span className="text-xs text-slate-500">AI Engine</span>
+                <span className="pos-badge-green">Online</span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                <span className="text-xs text-slate-500">Database</span>
+                <span className="pos-badge-green">Connected</span>
               </div>
             </div>
           </div>
 
-          <button className="w-full brutal-btn-primary flex items-center justify-center gap-4">
-            <Circle size={14} weight="fill" className="text-[#00FF41] animate-pulse" />
-            GENERATE_RECONCILIATION_REPORT
-          </button>
+          <div className="pos-card p-5 border-l-4 border-l-amber-400">
+            <div className="flex items-center gap-2 mb-2">
+              <Warning size={14} className="text-amber-500" weight="fill" />
+              <h4 className="text-xs font-semibold text-slate-700">Inventory Alert</h4>
+            </div>
+            <p className="text-sm text-slate-700">2 products are running low on stock</p>
+            <button className="mt-3 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+              Review inventory →
+            </button>
+          </div>
         </div>
       </div>
     </div>

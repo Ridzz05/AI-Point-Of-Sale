@@ -3,15 +3,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { transactionsApi } from '@/lib/api';
 import {
-  Terminal,
-  Lightning,
+  Sparkle,
   Warning,
   CheckCircle,
-  Printer,
   ShoppingCart,
   Receipt,
+  Microphone,
   ArrowRight,
-  Microphone
+  X,
+  CircleNotch,
+  MicrophoneSlash,
+  Robot,
+  ListBullets,
+  ChartBar,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
@@ -35,24 +39,31 @@ interface ParsedResult {
   };
 }
 
+const EXAMPLE_PROMPTS = [
+  'Sell 2 Cappuccino and 1 Croissant',
+  'Check all available products',
+  'Analyze current stock levels',
+];
+
 export function AICommandCenter() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ParsedResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  
+  const [txnSuccess, setTxnSuccess] = useState(false);
+
   const recognitionRef = useRef<any>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // Initialize Speech Recognition if supported
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = false;
         recognitionRef.current.interimResults = false;
-        recognitionRef.current.lang = 'id-ID'; // Default to Indonesian
+        recognitionRef.current.lang = 'id-ID';
 
         recognitionRef.current.onresult = (event: any) => {
           const transcript = event.results[0][0].transcript;
@@ -60,8 +71,7 @@ export function AICommandCenter() {
           setIsRecording(false);
         };
 
-        recognitionRef.current.onerror = (event: any) => {
-          console.error('Speech recognition error:', event.error);
+        recognitionRef.current.onerror = () => {
           setIsRecording(false);
         };
 
@@ -77,7 +87,6 @@ export function AICommandCenter() {
       alert('Speech recognition is not supported in this browser.');
       return;
     }
-
     if (isRecording) {
       recognitionRef.current.stop();
     } else {
@@ -88,9 +97,10 @@ export function AICommandCenter() {
 
   const handleProcess = async () => {
     if (!prompt.trim()) return;
-
     setLoading(true);
     setError(null);
+    setResult(null);
+    setTxnSuccess(false);
 
     try {
       const response = await transactionsApi.processAIPrompt(prompt) as { data: ParsedResult };
@@ -99,7 +109,7 @@ export function AICommandCenter() {
         setError(response.data.message);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to process prompt');
+      setError(err.message || 'Failed to process command');
     } finally {
       setLoading(false);
     }
@@ -107,257 +117,324 @@ export function AICommandCenter() {
 
   const handleCreateTransaction = async () => {
     if (!result || !result.success) return;
-
     try {
-      const paidAmount = result.total_amount;
       await transactionsApi.create({
         items: result.items,
-        paid_amount: paidAmount,
+        paid_amount: result.total_amount,
         payment_method: 'cash',
         ai_prompt: prompt,
       });
-      alert('TXN_COMPLETED_SUCCESSFULLY');
-      setPrompt('');
-      setResult(null);
+      setTxnSuccess(true);
+      setTimeout(() => {
+        setPrompt('');
+        setResult(null);
+        setTxnSuccess(false);
+      }, 2000);
     } catch (err: any) {
       setError(err.message || 'Failed to create transaction');
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      handleProcess();
+    }
+  };
+
+  const getIntentIcon = () => {
+    if (!result) return null;
+    switch (result.intent) {
+      case 'transaction': return <ShoppingCart size={16} className="text-indigo-600" />;
+      case 'inventory_check': return <ListBullets size={16} className="text-emerald-600" />;
+      case 'analysis': return <ChartBar size={16} className="text-amber-600" />;
+    }
+  };
+
+  const getIntentBadgeClass = () => {
+    if (!result) return '';
+    switch (result.intent) {
+      case 'transaction': return 'pos-badge-blue';
+      case 'inventory_check': return 'pos-badge-green';
+      case 'analysis': return 'bg-amber-100 text-amber-700 pos-badge';
+    }
+  };
+
+  const getIntentLabel = () => {
+    if (!result) return '';
+    switch (result.intent) {
+      case 'transaction': return 'Transaction';
+      case 'inventory_check': return 'Inventory';
+      case 'analysis': return 'Analysis';
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-      {/* Input Side - Terminal UI */}
-      <div className="space-y-8">
-        <div className="brutal-card-lg overflow-hidden bg-white">
-          <div className="bg-black p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Terminal size={20} className="text-[#D4FF00]" weight="bold" />
-              <span className="text-xs font-black font-mono text-white uppercase tracking-[0.2em]">AI_COMMAND_BUFFER_v4.0</span>
-            </div>
-            <div className="flex gap-2">
-              <div className="w-3 h-3 border-2 border-white" />
-              <div className="w-3 h-3 border-2 border-white bg-white" />
-            </div>
-          </div>
-          <div className="p-8 space-y-6">
-            <div className="relative">
-              <div className="absolute -top-3 -left-2 bg-[#D4FF00] border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase tracking-widest z-10">
-                Awaiting_Input
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h2 className="text-xl font-semibold text-slate-900">AI Cashier</h2>
+        <p className="text-sm text-slate-500 mt-0.5">
+          Type or speak a command to process transactions, check stock, or get insights.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+        {/* === Input Panel === */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="pos-card overflow-hidden">
+            {/* Card Header */}
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center gap-3">
+              <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
+                <Robot size={16} className="text-indigo-600" weight="fill" />
               </div>
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="TYPE_COMMAND_E.G._'JUAL_2_KOPI'..."
-                className="w-full h-64 p-6 bg-white border-4 border-black font-mono text-lg uppercase tracking-tight focus:outline-none focus:bg-[#F4F4F0] placeholder:text-black/20 resize-none transition-none shadow-[6px_6px_0px_0px_#000]"
-              />
-              
-              {/* Voice Command Button */}
-              <button
-                onClick={toggleRecording}
-                className={cn(
-                  "absolute bottom-4 right-4 flex items-center gap-2 p-4 border-4 border-black transition-none active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
-                  isRecording 
-                    ? "bg-[#FF003C] text-white shadow-none translate-x-[4px] translate-y-[4px]" 
-                    : "bg-white text-black shadow-[4px_4px_0px_0px_#000]"
-                )}
-              >
-                <Microphone 
-                  size={24} 
-                  weight="bold" 
-                  className={cn(isRecording && "animate-blink-brutal")}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Command Input</h3>
+                <p className="text-xs text-slate-400">Powered by Gemini AI</p>
+              </div>
+              {/* Recording indicator */}
+              {isRecording && (
+                <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-full border border-red-200">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-xs font-medium text-red-600">Recording...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Textarea */}
+            <div className="p-5">
+              <div className="relative">
+                <textarea
+                  ref={textareaRef}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="E.g. &quot;Sell 2 Cappuccino and 1 Croissant&quot; or &quot;Check stock levels&quot;..."
+                  className={cn(
+                    "w-full h-36 p-4 pr-14 rounded-lg bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 resize-none",
+                    "focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white",
+                    "transition-all duration-150",
+                    isRecording ? "border-red-300 bg-red-50/30 ring-2 ring-red-500/10" : "border-slate-200"
+                  )}
                 />
-                {isRecording && (
-                  <span className="text-[10px] font-black uppercase font-mono animate-blink-brutal">
-                    [ RECORDING... ]
-                  </span>
+                {/* Mic button */}
+                <button
+                  onClick={toggleRecording}
+                  title={isRecording ? 'Stop recording' : 'Start voice input'}
+                  className={cn(
+                    "absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200",
+                    isRecording
+                      ? "bg-red-500 text-white shadow-md animate-mic-pulse"
+                      : "bg-slate-200 text-slate-500 hover:bg-slate-300 hover:text-slate-700"
+                  )}
+                >
+                  {isRecording
+                    ? <MicrophoneSlash size={16} weight="fill" />
+                    : <Microphone size={16} weight="bold" />
+                  }
+                </button>
+              </div>
+
+              {/* Example chips */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {EXAMPLE_PROMPTS.map((ex) => (
+                  <button
+                    key={ex}
+                    onClick={() => setPrompt(ex)}
+                    className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Error state */}
+            {error && (
+              <div className="mx-5 mb-5 flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-lg">
+                <Warning size={16} className="text-red-500 shrink-0 mt-0.5" weight="fill" />
+                <div>
+                  <p className="text-xs font-medium text-red-700">Command failed</p>
+                  <p className="text-xs text-red-600 mt-0.5">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Process Button */}
+            <div className="px-5 pb-5">
+              <button
+                onClick={handleProcess}
+                disabled={loading || !prompt.trim()}
+                className="pos-btn-primary w-full flex items-center justify-center gap-2.5 py-3"
+              >
+                {loading ? (
+                  <>
+                    <CircleNotch size={16} className="animate-spin" />
+                    Processing command...
+                  </>
+                ) : (
+                  <>
+                    <Sparkle size={16} weight="fill" />
+                    Process Command
+                    <span className="ml-auto text-xs text-indigo-300 hidden sm:block">⌘ Enter</span>
+                  </>
                 )}
               </button>
             </div>
-            
-            <button
-              onClick={handleProcess}
-              disabled={loading || !prompt.trim()}
-              className={cn(
-                "w-full h-20 border-4 border-black font-black uppercase tracking-[0.3em] text-xl flex items-center justify-center gap-4 transition-none active:translate-x-[6px] active:translate-y-[6px] active:shadow-none",
-                loading || !prompt.trim()
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-black text-white hover:bg-white hover:text-black shadow-[6px_6px_0px_0px_#000]"
-              )}
-            >
-              {loading ? (
-                <>
-                  <div className="w-6 h-6 border-4 border-white border-t-transparent animate-spin" />
-                  ANALYZING_...
-                </>
-              ) : (
-                <>
-                  <Lightning size={24} weight="fill" />
-                  EXECUTE_COMMAND
-                </>
-              )}
-            </button>
+          </div>
+        </div>
 
-            {error && (
-              <div className="p-4 border-4 border-[#FF003C] bg-[#FF003C]/10 text-[#FF003C] font-black uppercase text-xs flex items-center gap-3 italic shadow-[4px_4px_0px_0px_#FF003C]">
-                <Warning size={20} weight="bold" />
-                EXECUTION_ERROR: {error}
+        {/* === Result Panel === */}
+        <div className="lg:col-span-2 sticky top-6">
+          <div className="pos-card overflow-hidden min-h-[400px] flex flex-col">
+            {/* Panel header */}
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Receipt size={16} className="text-slate-400" />
+                <h3 className="text-sm font-semibold text-slate-900">Result</h3>
               </div>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-6">
-          <div className="brutal-card p-6 bg-[#D4FF00]">
-            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-black/60">Logic_Engine</p>
-            <p className="text-sm font-black uppercase">FUZZY_MATCHING_v2</p>
-          </div>
-          <div className="brutal-card p-6">
-            <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-black/40">Latency</p>
-            <p className="text-sm font-black uppercase">0.84MS_CORE_SYNC</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Output Side - Nihilist Receipt */}
-      <div className="sticky top-12">
-        <div className="brutal-card-lg bg-white overflow-hidden">
-          <div className="p-6 border-b-4 border-black bg-[#F4F4F0] flex justify-between items-center italic">
-            <div className="flex items-center gap-3">
-              <Receipt size={24} weight="bold" />
-              <h3 className="text-lg font-black uppercase tracking-tighter underline decoration-4 underline-offset-4">Processed_Result</h3>
+              {result && (
+                <div className="flex items-center gap-2">
+                  <span className={getIntentBadgeClass()}>
+                    {getIntentLabel()}
+                  </span>
+                  {result.success ? (
+                    <span className="pos-badge-green">Valid</span>
+                  ) : (
+                    <span className="pos-badge-red">Failed</span>
+                  )}
+                </div>
+              )}
+              {result && (
+                <button
+                  onClick={() => { setResult(null); setError(null); }}
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors ml-1"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
-            {result && (
-              <div className={cn(
-                "brutal-badge px-4 py-2 text-xs",
-                result.success ? "bg-[#00FF41]" : "bg-[#FF003C] text-white"
-              )}>
-                {result.success ? 'VALID_TXN' : 'INVALID_TXN'}
-              </div>
-            )}
-          </div>
 
-          <div className="min-h-[400px] flex flex-col">
-            {result?.success ? (
-              <>
-                <div className="p-8 flex-1 space-y-10">
-                  {/* AI Message */}
-                  <div className="p-6 border-4 border-black bg-black text-white relative">
-                    <div className="absolute -top-3 -right-2 bg-white text-black border-2 border-black px-2 py-0.5 text-[8px] font-black uppercase">
-                      AI_INSIGHT
+            {/* Panel body */}
+            <div className="flex-1 flex flex-col">
+              {txnSuccess ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                  <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle size={28} className="text-emerald-600" weight="fill" />
+                  </div>
+                  <h4 className="text-base font-semibold text-slate-900">Transaction Complete</h4>
+                  <p className="text-sm text-slate-500 mt-1">The transaction has been recorded successfully.</p>
+                </div>
+              ) : result?.success ? (
+                <>
+                  <div className="p-5 flex-1 space-y-5">
+                    {/* AI Message */}
+                    <div className="flex items-start gap-3 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                      <div className="w-7 h-7 bg-indigo-600 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                        <Robot size={13} className="text-white" weight="fill" />
+                      </div>
+                      <p className="text-sm text-indigo-900 leading-relaxed">{result.message}</p>
                     </div>
-                    <p className="text-sm font-black uppercase leading-tight italic tracking-tight">
-                      "{result.message}"
-                    </p>
+
+                    {/* Transaction items */}
+                    {result.intent === 'transaction' && result.items.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Items</p>
+                        <div className="space-y-2">
+                          {result.items.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                              <div>
+                                <p className="text-sm font-medium text-slate-900">
+                                  {item.name}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                  {item.quantity} × Rp {item.price.toLocaleString('id-ID')}
+                                </p>
+                              </div>
+                              <p className="text-sm font-semibold text-slate-900">
+                                Rp {item.subtotal.toLocaleString('id-ID')}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inventory / Analysis highlights */}
+                    {(result.intent === 'analysis' || result.intent === 'inventory_check') && result.data?.highlights && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Details</p>
+                        <div className="space-y-1.5">
+                          {result.data.highlights.map((h, i) => (
+                            <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-md hover:bg-slate-50 transition-colors">
+                              <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                                <span className="text-[10px] font-bold text-slate-500">{i + 1}</span>
+                              </div>
+                              <p className="text-sm text-slate-700">{h}</p>
+                            </div>
+                          ))}
+                        </div>
+                        {result.data.recommended_action && (
+                          <div className="mt-4 p-3.5 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5">
+                            <Warning size={14} className="text-amber-500 shrink-0 mt-0.5" weight="fill" />
+                            <p className="text-xs text-amber-800 leading-relaxed">{result.data.recommended_action}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Transaction Mode */}
-                  {result.intent === 'transaction' && (
-                    <div className="space-y-6">
-                      <div className="flex justify-between text-xs font-black uppercase border-b-4 border-black pb-2 tracking-[0.2em]">
-                        <span>Manifest_Item</span>
-                        <span>Total_RP</span>
-                      </div>
-                      <div className="space-y-6 divide-y-2 divide-dashed divide-black">
-                        {result.items.map((item, index) => (
-                          <div key={index} className="flex justify-between items-start pt-4 first:pt-0">
-                            <div>
-                              <p className="text-lg font-black uppercase tracking-tighter">
-                                {item.quantity}X {item.name}
-                              </p>
-                              <p className="text-[10px] font-black text-gray-400 mt-1 uppercase">UNIT_PRICE: {item.price.toLocaleString()}</p>
-                            </div>
-                            <p className="text-lg font-black italic">
-                              {item.subtotal.toLocaleString()}
-                            </p>
+                  {/* Footer */}
+                  <div className="px-5 pb-5 border-t border-slate-100 pt-4">
+                    {result.intent === 'transaction' ? (
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs text-slate-500">
+                            <span>Subtotal</span>
+                            <span>Rp {result.total_amount.toLocaleString('id-ID')}</span>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Analysis/Inventory Mode */}
-                  {(result.intent === 'analysis' || result.intent === 'inventory_check') && result.data && (
-                    <div className="space-y-8 animate-in zoom-in-95 duration-300">
-                      {result.data.highlights && (
-                        <div className="space-y-4">
-                          <h4 className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">Stream_Analysis</h4>
-                          <div className="space-y-2">
-                            {result.data.highlights.map((h, i) => (
-                              <div key={i} className="p-4 border-2 border-black bg-white flex gap-4 italic text-sm font-bold uppercase leading-none">
-                                <span className="text-[#FF003C]">[{i+1}]</span>
-                                {h}
-                              </div>
-                            ))}
+                          <div className="flex justify-between text-xs text-slate-500">
+                            <span>Tax (0%)</span>
+                            <span>Rp 0</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                            <span className="text-sm font-semibold text-slate-900">Total</span>
+                            <span className="text-xl font-bold text-slate-900">
+                              Rp {result.total_amount.toLocaleString('id-ID')}
+                            </span>
                           </div>
                         </div>
-                      )}
-                      
-                      {result.data.recommended_action && (
-                        <div className="p-8 border-4 border-black bg-[#D4FF00] shadow-[8px_8px_0px_0px_#000]">
-                          <div className="flex items-center gap-3 mb-3">
-                            <Warning size={20} weight="fill" />
-                            <span className="text-xs font-black uppercase tracking-widest">SYSTEM_URGENT_ACTION</span>
-                          </div>
-                          <p className="text-lg font-black uppercase tracking-tighter italic leading-none">{result.data.recommended_action}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer Action Area */}
-                <div className="p-8 border-t-4 border-black bg-white space-y-6">
-                  {result.intent === 'transaction' ? (
-                    <>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm font-black uppercase tracking-widest text-gray-500">
-                          <span>Subtotal_Net</span>
-                          <span>{result.total_amount.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between text-sm font-black uppercase tracking-widest text-gray-500">
-                          <span>Tax_Vat_0%</span>
-                          <span>0</span>
-                        </div>
-                        <div className="pt-6 border-t-4 border-black flex justify-between items-baseline">
-                          <span className="text-xl font-black uppercase italic tracking-tighter">Grand_Total</span>
-                          <span className="text-6xl font-black tracking-tighter">
-                            {result.total_amount.toLocaleString()}
-                          </span>
-                        </div>
+                        <button
+                          onClick={handleCreateTransaction}
+                          className="pos-btn-primary w-full flex items-center justify-center gap-2 py-3"
+                        >
+                          <CheckCircle size={16} weight="fill" />
+                          Confirm Transaction
+                        </button>
                       </div>
-
-                      <button 
-                        onClick={handleCreateTransaction} 
-                        className="w-full h-24 bg-black text-white border-4 border-black font-black uppercase tracking-[0.4em] text-2xl hover:bg-[#00FF41] hover:text-black transition-none active:translate-x-[6px] active:translate-y-[6px] active:shadow-none shadow-[8px_8px_0px_0px_#000] flex items-center justify-center gap-6"
+                    ) : (
+                      <button
+                        onClick={() => { setResult(null); setError(null); setPrompt(''); }}
+                        className="pos-btn-secondary w-full flex items-center justify-center gap-2"
                       >
-                        <CheckCircle size={36} weight="bold" />
-                        COMMIT_TXN
+                        New command
+                        <ArrowRight size={14} />
                       </button>
-                    </>
-                  ) : (
-                    <button 
-                      onClick={() => setResult(null)} 
-                      className="w-full h-20 bg-black text-white border-4 border-black font-black uppercase tracking-widest text-lg hover:bg-white hover:text-black transition-none shadow-[6px_6px_0px_0px_#000]"
-                    >
-                      FLUSH_BUFFER_DATA
-                    </button>
-                  )}
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* Empty state */
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                  <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+                    <ShoppingCart size={26} className="text-slate-400" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-slate-700">Ready to process</h4>
+                  <p className="text-xs text-slate-400 mt-1.5 max-w-[200px] leading-relaxed">
+                    Type a command or use voice input to get started.
+                  </p>
                 </div>
-              </>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-20 text-center bg-[#F4F4F0] relative overflow-hidden group">
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none select-none uppercase font-black text-[12rem] leading-none break-all select-none">
-                  NULL_DATA_NULL_DATA_NULL_DATA
-                </div>
-                <div className="w-40 h-40 border-8 border-black flex items-center justify-center mb-10 rotate-45 group-hover:rotate-0 transition-transform duration-1000 bg-white shadow-[12px_12px_0px_0px_#000]">
-                  <ShoppingCart size={80} weight="bold" className="-rotate-45 group-hover:rotate-0 transition-transform duration-1000" />
-                </div>
-                <h3 className="text-3xl font-black uppercase tracking-[0.4em] italic mb-4">READY_FOR_SYNC</h3>
-                <p className="text-xs font-bold uppercase max-w-[300px] tracking-widest leading-loose text-gray-500">
-                  Input command stream to populate terminal buffer. AI parser v4.0 is active.
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

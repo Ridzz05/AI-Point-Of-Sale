@@ -9,6 +9,7 @@ use App\Services\AI\OpenRouterService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TransactionController extends Controller
 {
@@ -73,7 +74,7 @@ class TransactionController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
+                'success' => true,
                 'message' => 'Gagal memproses perintah AI: ' . $e->getMessage(),
             ], 500);
         }

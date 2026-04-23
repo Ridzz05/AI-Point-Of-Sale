@@ -1,12 +1,13 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { 
-  SquaresFour, 
-  Monitor, 
-  Package, 
-  Receipt, 
-  SignOut 
+import {
+  SquaresFour,
+  Monitor,
+  Package,
+  Receipt,
+  SignOut,
+  Sparkle,
 } from '@phosphor-icons/react';
 
 interface NavigationProps {
@@ -17,49 +18,58 @@ interface NavigationProps {
 
 export function Navigation({ activeTab, onTabChange, onLogout }: NavigationProps) {
   const tabs = [
-    { id: 'dashboard', label: 'DASHBOARD', icon: SquaresFour },
-    { id: 'cashier', label: 'CASHIER', icon: Monitor },
-    { id: 'products', label: 'PRODUCTS', icon: Package },
-    { id: 'transactions', label: 'TRANSACTIONS', icon: Receipt },
+    { id: 'dashboard', label: 'Dashboard', icon: SquaresFour },
+    { id: 'cashier', label: 'AI Cashier', icon: Monitor },
+    { id: 'products', label: 'Products', icon: Package },
+    { id: 'transactions', label: 'Transactions', icon: Receipt },
   ];
 
   return (
-    <aside className="w-56 border-r-4 border-black bg-white flex flex-col h-screen sticky top-0 z-50">
-      <div className="p-6 border-b-4 border-black bg-black text-white">
-        <h1 className="text-2xl font-black tracking-tight uppercase italic">
-          AI_POS
-        </h1>
-        <p className="text-[10px] font-black mt-1 tracking-[0.2em] text-[#D4FF00]">
-          SYSTEM_v0.1_STABLE
-        </p>
+    <aside className="w-60 border-r border-slate-200 bg-white flex flex-col h-screen sticky top-0 z-50">
+      {/* Logo */}
+      <div className="px-5 py-5 border-b border-slate-200">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <Sparkle size={18} weight="fill" className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold text-slate-900 leading-none">SmartPOS</h1>
+            <p className="text-[11px] text-slate-400 mt-0.5 leading-none">AI-Powered</p>
+          </div>
+        </div>
       </div>
 
-      <nav className="flex-1 p-0 space-y-0 overflow-y-auto">
+      {/* Nav Links */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">Main Menu</p>
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          
+
           const content = (
             <button
               key={tab.id}
               onClick={() => tab.id !== 'cashier' && onTabChange(tab.id)}
               className={cn(
-                "w-full flex items-center gap-3 px-6 py-4 border-b-2 border-black transition-none group text-left",
-                isActive 
-                  ? "bg-black text-white" 
-                  : "bg-white text-black hover:bg-[#D4FF00]"
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left transition-colors duration-150",
+                isActive
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
-              <Icon 
-                size={20} 
-                weight={isActive ? "fill" : "bold"}
+              <Icon
+                size={18}
+                weight={isActive ? "fill" : "regular"}
                 className="shrink-0"
               />
-              <span className="text-xs font-black uppercase tracking-widest font-mono">
+              <span className={cn(
+                "text-sm",
+                isActive ? "font-medium" : "font-normal"
+              )}>
                 {tab.label}
               </span>
               {isActive && (
-                <div className="ml-auto text-[10px] font-black bg-[#D4FF00] text-black px-1.5 leading-none py-1">ON</div>
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600" />
               )}
             </button>
           );
@@ -76,13 +86,14 @@ export function Navigation({ activeTab, onTabChange, onLogout }: NavigationProps
         })}
       </nav>
 
-      <div className="p-4 border-t-4 border-black">
+      {/* Logout */}
+      <div className="px-3 py-4 border-t border-slate-200">
         <button
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-white text-black border-4 border-black hover:bg-[#FF003C] hover:text-white hover:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-none active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors duration-150"
         >
-          <SignOut size={20} weight="bold" />
-          <span className="text-xs font-black uppercase tracking-widest font-mono">SHUTDOWN</span>
+          <SignOut size={18} weight="regular" />
+          <span className="text-sm font-normal">Sign out</span>
         </button>
       </div>
     </aside>

@@ -14,7 +14,7 @@ class OpenRouterService
     public function __construct()
     {
         $this->apiKey = config('services.openrouter.api_key') ?? env('OPENROUTER_API_KEY');
-        $this->model = config('services.openrouter.model') ?? env('OPENROUTER_MODEL', 'google/gemini-pro-1.5-flash');
+        $this->model = config('services.openrouter.model') ?? env('OPENROUTER_MODEL', 'google/gemini-2.5-pro');
         $this->baseUrl = 'https://openrouter.ai/api/v1';
     }
 
@@ -48,11 +48,14 @@ class OpenRouterService
             ]);
 
             if (!$response->successful()) {
+                $errorBody = $response->json();
+                $errorMessage = $errorBody['error']['message'] ?? ($errorBody['error']['metadata']['raw'] ?? $response->body());
+
                 Log::error('OpenRouter API Error', [
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
-                throw new \Exception('Failed to process AI request: ' . ($response->json()['error']['message'] ?? 'Unknown error'));
+                throw new \Exception('Failed to process AI request: ' . $errorMessage);
             }
 
             $data = $response->json();
@@ -78,7 +81,10 @@ class OpenRouterService
     protected function buildSystemPrompt(array $products): string
     {
         $productList = collect($products)->map(function ($product) {
-            return "- ID: {$product['id']}, Nama: {$product['name']}, Kategori: {$product['category']}, Harga: {$product['price']}, Stok: {$product['stock']}, Deskripsi: {$product['description']}";
+            $description = strlen($product['description']) > 100
+                ? substr($product['description'], 0, 100) . '...'
+                : $product['description'];
+            return "- ID: {$product['id']}, Nama: {$product['name']}, Kategori: {$product['category']}, Harga: {$product['price']}, Stok: {$product['stock']}, Deskripsi: {$description}";
         })->implode("\n");
 
         if (empty($productList)) {

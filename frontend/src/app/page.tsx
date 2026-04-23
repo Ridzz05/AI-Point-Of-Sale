@@ -49,57 +49,55 @@ export default function Home() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'cashier':
-        return <AICommandCenter />;
-      case 'products':
-        return <ProductManager />;
-      case 'transactions':
-        return <TransactionHistory />;
-      default:
-        return <Dashboard />;
+      case 'dashboard': return <Dashboard />;
+      case 'cashier': return <AICommandCenter />;
+      case 'products': return <ProductManager />;
+      case 'transactions': return <TransactionHistory />;
+      default: return <Dashboard />;
     }
   };
 
+  const tabTitles: Record<string, string> = {
+    dashboard: 'Dashboard',
+    cashier: 'AI Cashier',
+    products: 'Products',
+    transactions: 'Transactions',
+  };
+
   return (
-    <div className="flex min-h-screen bg-white text-black font-sans selection:bg-[#D4FF00] selection:text-black">
-      <Navigation 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-        onLogout={handleLogout} 
+    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+      <Navigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
       />
-      
+
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Strict Header */}
-        <header className="h-16 bg-white border-b-4 border-black px-8 flex items-center justify-between sticky top-0 z-40">
-          <div className="flex items-center gap-6">
-            <h2 className="text-sm font-black uppercase tracking-[0.2em] bg-black text-white px-4 py-2 italic border-2 border-black">
-              {activeTab.replace('-', '_')}
-            </h2>
-            <div className="h-6 w-1 bg-black/10" />
-            <div className="flex items-center gap-2">
-              <Circle size={10} weight="fill" className="text-[#00FF41]" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-black/60">
-                HOST_NODE: POS_ALPHA_01
-              </p>
+        {/* Top Bar */}
+        <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40">
+          <div className="flex items-center gap-3">
+            <h2 className="text-sm font-semibold text-slate-900">{tabTitles[activeTab]}</h2>
+            <div className="h-4 w-px bg-slate-200" />
+            <div className="flex items-center gap-1.5">
+              <Circle size={7} weight="fill" className="text-emerald-500" />
+              <p className="text-xs text-slate-400">System online</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
-              <p className="text-[10px] font-black uppercase tracking-tighter leading-none">{user?.name || 'NULL'}</p>
-              <p className="text-[8px] font-black text-[#FF003C] mt-1 uppercase tracking-widest italic">ROOT_ACCESS_LEVEL</p>
+              <p className="text-xs font-medium text-slate-900">{user?.name || '—'}</p>
+              <p className="text-[11px] text-slate-400">Administrator</p>
             </div>
-            <div className="w-10 h-10 bg-black text-white flex items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
-              <UserCircle size={24} weight="bold" />
+            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+              <UserCircle size={20} weight="fill" className="text-indigo-600" />
             </div>
           </div>
         </header>
 
-        {/* Content Environment - Off-White Kotor */}
-        <div className="flex-1 overflow-y-auto p-8 md:p-12 bg-[#F4F4F0]">
-          <div className="max-w-none">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+          <div className="max-w-7xl mx-auto">
             {renderContent()}
           </div>
         </div>
