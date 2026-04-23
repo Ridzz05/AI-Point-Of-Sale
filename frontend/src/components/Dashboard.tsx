@@ -7,7 +7,7 @@ import {
   ShoppingCart,
   Clock,
   ArrowRight,
-  Receipt,  
+  Receipt,
   Warning,
   Circle,
   Lightning,
@@ -24,8 +24,10 @@ interface TodaySummary {
 export function Dashboard() {
   const [summary, setSummary] = useState<TodaySummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     loadSummary();
   }, []);
 
@@ -59,7 +61,7 @@ export function Dashboard() {
             RP_{summary?.total_revenue?.toLocaleString() || '0'}
           </h2>
           <p className="text-xs font-black uppercase tracking-widest text-gray-400">
-            METRIC_SYNCED: {new Date().toLocaleTimeString()} // INTERVAL: 1S
+            METRIC_SYNCED: {mounted ? new Date().toLocaleTimeString() : '--:--:--'} // INTERVAL: 1S
           </p>
         </div>
         <div className="flex flex-col gap-4 w-full md:w-auto">
@@ -101,8 +103,10 @@ export function Dashboard() {
                     <tr key={tx.id} className="hover:bg-[#F4F4F0] transition-none group">
                       <td className="brutal-table-cell font-mono">#{tx.id.toString().padStart(4, '0')}</td>
                       <td className="brutal-table-cell">
-                        <span className="text-[10px] block opacity-60 font-mono">{new Date(tx.created_at).toLocaleDateString()}</span>
-                        {new Date(tx.created_at).toLocaleTimeString()}
+                        <span className="text-[10px] block opacity-60 font-mono">
+                          {mounted ? new Date(tx.created_at).toLocaleDateString() : '---'}
+                        </span>
+                        {mounted ? new Date(tx.created_at).toLocaleTimeString() : '---'}
                       </td>
                       <td className="brutal-table-cell text-right font-black italic">
                         RP_{tx.total_amount.toLocaleString()}

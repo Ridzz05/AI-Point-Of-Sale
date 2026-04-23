@@ -19,9 +19,11 @@ import { useRouter } from 'next/navigation';
 export default function CashierPage() {
   const [user, setUser] = useState<any>(null);
   const [time, setTime] = useState(new Date());
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     const token = api.getToken();
     if (!token) {
       router.push('/');
@@ -70,13 +72,13 @@ export default function CashierPage() {
             <div className="flex items-center gap-3">
               <Calendar size={20} weight="bold" className="text-gray-500" />
               <span className="text-xs font-black uppercase tracking-widest font-mono">
-                {time.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '_')}
+                {mounted ? time.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '_') : '---_--_----'}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <Clock size={20} weight="bold" className="text-gray-500" />
               <span className="text-xs font-black uppercase tracking-widest font-mono">
-                {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                {mounted ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}
               </span>
             </div>
           </div>
