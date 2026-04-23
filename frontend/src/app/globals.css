@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: #FFFFFF;
+  --color-foreground: #000000;
+  --font-sans: "Inter", "Archivo Black", sans-serif;
+  --font-mono: "Space Mono", "IBM Plex Mono", ui-monospace, monospace;
+  --font-heading: "Archivo Black", sans-serif;
+  --color-ring: #000000;
+  --color-input: #000000;
+  --color-border: #000000;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+  
+  --shadow-brutal: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-brutal-lg: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-brutal-xl: 12px 12px 0px 0px rgba(0, 0, 0, 1);
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --card: #FFFFFF;
+  --card-foreground: #000000;
+  --primary: #000000;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F4F4F0;
+  --secondary-foreground: #000000;
+  --muted: #F4F4F0;
+  --muted-foreground: #666666;
+  --accent: #D4FF00; /* Toxic Yellow */
+  --accent-foreground: #000000;
+  --destructive: #FF003C; /* Alert Red */
+  --border: #000000;
+  --input: #000000;
+  --ring: #000000;
+  --radius: 0px;
+}
+
+@layer base {
+  * {
+    @apply border-black rounded-none transition-none!;
+    border-width: 0;
+  }
+  
+  body {
+    @apply bg-white text-black font-sans antialiased;
+    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-black uppercase tracking-tighter leading-none;
+  }
+
+  button, input, textarea {
+    @apply rounded-none shadow-none!;
+  }
+}
+
+@layer components {
+  .brutal-card {
+    @apply bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden;
+  }
+  
+  .brutal-card-lg {
+    @apply bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden;
+  }
+  
+  .brutal-btn-primary {
+    @apply bg-black text-white px-6 py-3 border-4 border-black font-black uppercase text-xs tracking-widest hover:bg-white hover:text-black hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-none;
+  }
+
+  .brutal-btn-secondary {
+    @apply bg-white text-black px-6 py-3 border-4 border-black font-black uppercase text-xs tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-none;
+  }
+
+  .brutal-input {
+    @apply border-4 border-black p-3 bg-white focus:outline-none focus:bg-[#D4FF00] transition-none font-mono placeholder:text-black/30;
+  }
+
+  .brutal-table-header {
+    @apply bg-black text-white font-black uppercase tracking-widest p-4 border-r-2 border-white last:border-r-0;
+  }
+
+  .brutal-table-cell {
+    @apply border-2 border-black p-4 font-bold text-sm uppercase;
+  }
+
+  .brutal-badge {
+    @apply border-2 border-black bg-white px-2 py-1 font-black text-[10px] uppercase tracking-tighter;
+  }
+
+  @keyframes blink-brutal {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  .animate-blink-brutal {
+    animation: blink-brutal 0.4s step-end infinite;
+  }
+}
