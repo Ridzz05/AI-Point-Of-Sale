@@ -28,95 +28,99 @@ import {
 import {Link, usePage} from "@inertiajs/react";
 import {PageProps} from "@/types";
 
-const data = {
-  user: {
-    id: 0,
-    name: "AI-Smart-Agency-Dashboard",
-    email: "admin@kita.com",
-    avatar: "/avatars/admin.jpg",
-  },
-  teams: [
-    {
-      name: "AdminCRM Kita",
-      logo: Buildings,
-      plan: "Agency Plan",
-    },
-  ],
-  navMain: [
-    {
-      title: "Dashboard",
-      url: route('dashboard'),
-      icon: House,
-      isActive: true,
-    },
-    {
-      title: "Point of Sale",
-      url: route('pos.index'),
-      icon: Storefront,
-    },
-    {
-      title: "Catalog",
-      url: route('products.index'),
-      icon: SquaresFour,
-      items: [
-        {
-          title: "Products",
-          url: route('products.index'),
-          icon: Package,
-        },
-        {
-          title: "Categories",
-          url: route('categories.index'),
-          icon: Tag,
-        },
-        {
-          title: "Inventory",
-          url: route('inventory.index'),
-          icon: Cube,
-        },
-      ],
-    },
-    {
-      title: "Sales & Transactions",
-      url: route('transactions.index'),
-      icon: Receipt,
-    },
-    {
-      title: "Customers",
-      url: route('customers.index'),
-      icon: UsersThree,
-    },
-    {
-      title: "AI Business Assistant",
-      url: route('ai.index'),
-      icon: MagicWand,
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: Question,
-    },
-  ],
-}
-
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth } = usePage<PageProps>().props;
+    const url = usePage().url;
+
+    const navMain = [
+        {
+            title: "Dashboard",
+            url: route('dashboard'),
+            icon: House,
+            isActive: url === '/dashboard',
+        },
+        {
+            title: "Point of Sale",
+            url: route('pos.index'),
+            icon: Storefront,
+            isActive: url.startsWith('/pos'),
+        },
+        {
+            title: "Catalog",
+            url: "#", // Changed to # to prevent navigation conflict with collapsible
+            icon: SquaresFour,
+            isActive: url.startsWith('/products') || url.startsWith('/categories') || url.startsWith('/inventory'),
+            items: [
+                {
+                    title: "Products",
+                    url: route('products.index'),
+                },
+                {
+                    title: "Categories",
+                    url: route('categories.index'),
+                },
+                {
+                    title: "Inventory",
+                    url: route('inventory.index'),
+                },
+            ],
+        },
+        {
+            title: "Sales & Transactions",
+            url: route('transactions.index'),
+            icon: Receipt,
+            isActive: url.startsWith('/transactions'),
+        },
+        {
+            title: "Customers",
+            url: route('customers.index'),
+            icon: UsersThree,
+            isActive: url.startsWith('/customers'),
+        },
+        {
+            title: "AI Business Assistant",
+            url: route('ai.index'),
+            icon: MagicWand,
+            isActive: url.startsWith('/ai'),
+        },
+    ];
+
+    const sidebarData = {
+        user: {
+            id: auth.user?.id || 0,
+            name: auth.user?.name || "Admin",
+            email: auth.user?.email || "admin@example.com",
+            avatar: "/avatars/admin.jpg",
+        },
+        teams: [
+            {
+                name: "AdminCRM Kita",
+                logo: Buildings,
+                plan: "Agency Plan",
+            },
+        ],
+        navMain: navMain,
+        navSecondary: [
+            {
+                title: "Support",
+                url: "#",
+                icon: Question,
+            },
+        ],
+    };
 
     return (
-    <Sidebar variant="inset" {...props}>
-      <SidebarHeader>
-        <NavTeams teams={data.teams} />
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={auth.user ?? data.user} />
-      </SidebarFooter>
-    </Sidebar>
-  )
+        <Sidebar variant="inset" {...props}>
+            <SidebarHeader>
+                <NavTeams teams={sidebarData.teams} />
+            </SidebarHeader>
+            <SidebarContent>
+                <NavMain items={sidebarData.navMain} />
+                <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
+            </SidebarContent>
+            <SidebarFooter>
+                <NavUser user={sidebarData.user} />
+            </SidebarFooter>
+        </Sidebar>
+    );
 }
