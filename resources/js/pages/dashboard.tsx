@@ -14,13 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
     Users, 
-    Briefcase, 
+    Package, 
+    Receipt, 
     CurrencyDollar, 
     TrendUp, 
     Plus, 
     Sparkle, 
     ArrowUpRight, 
-    Clock 
+    Clock,
+    ShoppingCart
 } from "@phosphor-icons/react";
 import {
     AreaChart,
@@ -88,12 +90,12 @@ export default function Dashboard({
                                 Welcome Back, Gess! 👋
                             </h2>
                             <p className="text-lg text-amber-950 leading-relaxed opacity-80">
-                                Performa agensi Anda naik <span className="font-bold">12%</span> minggu ini. 
-                                Ada <span className="font-bold">{stats?.totalProjects || 0} proyek</span> yang membutuhkan perhatian Anda.
+                                Performa bisnis Anda naik <span className="font-bold">12%</span> minggu ini. 
+                                Ada <span className="font-bold">{stats?.totalOrders || 0} pesanan</span> yang telah diproses.
                             </p>
                             <div className="mt-8 flex flex-wrap gap-4">
-                                <Link href={route('projects.index')} className="group inline-flex items-center justify-center rounded-xl bg-black px-6 py-3 text-sm font-bold text-amber-400 transition-all hover:bg-slate-900 shadow-md active:scale-95">
-                                    <Plus weight="bold" className="mr-2 h-5 w-5 transition-transform group-hover:rotate-90" /> Proyek Baru
+                                <Link href={route('products.create')} className="group inline-flex items-center justify-center rounded-xl bg-black px-6 py-3 text-sm font-bold text-amber-400 transition-all hover:bg-slate-900 shadow-md active:scale-95">
+                                    <Plus weight="bold" className="mr-2 h-5 w-5 transition-transform group-hover:rotate-90" /> Produk Baru
                                 </Link>
                                 <Link href={route('transactions.index')} className="inline-flex items-center justify-center rounded-xl bg-black/5 px-6 py-3 text-sm font-bold text-black backdrop-blur-md border border-black/10 transition-all hover:bg-black/10 active:scale-95">
                                     <CurrencyDollar weight="bold" className="mr-2 h-5 w-5" /> Catat Transaksi
@@ -152,9 +154,9 @@ export default function Dashboard({
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                     {[
                         { title: "Total Customers", value: stats?.totalCustomers, icon: Users, color: "text-amber-600", bg: "bg-amber-100/50", desc: "Leads & Active Clients" },
-                        { title: "Active Projects", value: stats?.totalProjects, icon: Briefcase, color: "text-amber-600", bg: "bg-amber-100/50", desc: "Running right now" },
-                        { title: "Total Revenue", value: `Rp ${new Intl.NumberFormat('id-ID').format(stats?.totalRevenue || 0)}`, icon: CurrencyDollar, color: "text-amber-600", bg: "bg-amber-100/50", desc: "Verified payments" },
-                        { title: "Engagement Rate", value: "84%", icon: TrendUp, color: "text-amber-600", bg: "bg-amber-100/50", desc: "Up 12% from last month" }
+                        { title: "Total Products", value: stats?.totalProducts, icon: Package, color: "text-amber-600", bg: "bg-amber-100/50", desc: "Available in catalog" },
+                        { title: "Total Revenue", value: `Rp ${new Intl.NumberFormat('id-ID').format(stats?.totalRevenue || 0)}`, icon: CurrencyDollar, color: "text-amber-600", bg: "bg-amber-100/50", desc: "Completed sales" },
+                        { title: "Total Orders", value: stats?.totalOrders, icon: Receipt, color: "text-amber-600", bg: "bg-amber-100/50", desc: "Processed transactions" }
                     ].map((item, i) => (
                         <Card key={i} className="group hover:shadow-md transition-all duration-300 border border-zinc-100 dark:border-zinc-800 bg-card shadow-sm">
                             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -239,11 +241,11 @@ export default function Dashboard({
                                         <div key={i} className="group flex items-start gap-4 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                             <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 shadow-sm transition-transform group-hover:scale-110 ${
                                                 activity.type === 'customer' ? 'bg-amber-50 border-amber-100 text-amber-600' :
-                                                activity.type === 'project' ? 'bg-amber-50 border-amber-100 text-amber-600' :
+                                                activity.type === 'order' ? 'bg-amber-50 border-amber-100 text-amber-600' :
                                                 'bg-amber-50 border-amber-100 text-amber-600'
                                             }`}>
                                                 {activity.type === 'customer' ? <Users weight="light" className="h-5 w-5" /> :
-                                                 activity.type === 'project' ? <Briefcase weight="light" className="h-5 w-5" /> :
+                                                 activity.type === 'order' ? <Receipt weight="light" className="h-5 w-5" /> :
                                                  <CurrencyDollar weight="light" className="h-5 w-5" />}
                                             </div>
                                             <div className="flex flex-col gap-0.5">
@@ -273,47 +275,6 @@ export default function Dashboard({
                     </Card>
                 </div>
                 
-                <Card className="border border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b">
-                        <CardTitle className="text-xl font-bold">Project Allocation</CardTitle>
-                        <CardDescription>How your team's energy is distributed</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-8">
-                        <div className="h-[400px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={projectsByStatus || []}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={80}
-                                        outerRadius={140}
-                                        paddingAngle={10}
-                                        dataKey="count"
-                                        nameKey="status"
-                                        stroke="none"
-                                    >
-                                        {(projectsByStatus || []).map((entry: any, index: number) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip 
-                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="flex flex-wrap justify-center gap-6 mt-4 pb-4">
-                            {(projectsByStatus || []).map((entry: any, index: number) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                                    <span className="text-sm font-bold">{entry.status}</span>
-                                    <span className="text-sm text-muted-foreground">({entry.count})</span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
         </AuthenticatedLayout>
     );

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\Customer;
-use App\Models\Project;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -14,11 +13,9 @@ class TransactionController extends Controller
     {
         $search = $request->input('search');
         
-        $transactions = Transaction::with(['customer', 'project'])
+        $transactions = Transaction::with(['customer'])
             ->when($search, function($query, $search) {
                 $query->whereHas('customer', function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                })->orWhereHas('project', function($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%");
                 })->orWhere('amount', 'like', "%{$search}%");
             })
@@ -28,7 +25,6 @@ class TransactionController extends Controller
         return Inertia::render('transactions/index', [
             'transactions' => $transactions,
             'customers' => Customer::select('id', 'name')->get(),
-            'projects' => Project::select('id', 'name')->get(),
             'filters' => $request->only(['search']),
         ]);
     }
@@ -37,7 +33,6 @@ class TransactionController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
-            'project_id' => 'nullable|exists:projects,id',
             'amount' => 'required|numeric|min:0',
             'status' => 'required|in:Pending,Paid,Cancelled',
             'invoice_url' => 'nullable|url',
@@ -57,7 +52,6 @@ class TransactionController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
-            'project_id' => 'nullable|exists:projects,id',
             'amount' => 'required|numeric|min:0',
             'status' => 'required|in:Pending,Paid,Cancelled',
             'invoice_url' => 'nullable|url',

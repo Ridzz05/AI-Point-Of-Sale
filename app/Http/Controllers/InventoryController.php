@@ -6,6 +6,7 @@ use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class InventoryController extends Controller
 {
@@ -46,20 +47,20 @@ class InventoryController extends Controller
             $query->orderBy('quantity', $direction);
         } elseif ($sort === 'available_quantity') {
             $query->orderBy('available_quantity', $direction);
-        } elseif ($sort === 'name') {
-            $query->orderBy(
-                Inventory::select('name')
-                    ->whereColumn('inventoryable_id', 'inventories.inventoryable_id')
-                    ->where('inventoryable_type', 'inventories.inventoryable_type')
-                    ->limit(1),
-                $direction
-            );
         }
 
         $inventories = $query->paginate($request->per_page ?? 20);
 
-        return response()->json($inventories);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json($inventories);
+        }
+
+        return Inertia::render('inventory/index', [
+            'inventories' => $inventories,
+            'filters' => $request->only(['search', 'stock_status']),
+        ]);
     }
+
 
     public function show(Inventory $inventory)
     {
@@ -89,12 +90,16 @@ class InventoryController extends Controller
             $inventory->save();
         }
 
-        return response()->json([
-            'message' => 'Inventory adjusted successfully',
-            'old_quantity' => $oldQuantity,
-            'new_quantity' => $inventory->quantity,
-            'adjustment' => $request->quantity - $oldQuantity,
-        ]);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json([
+                'message' => 'Inventory adjusted successfully',
+                'old_quantity' => $oldQuantity,
+                'new_quantity' => $inventory->quantity,
+                'adjustment' => $request->quantity - $oldQuantity,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Inventory adjusted successfully.');
     }
 
     public function add(Request $request, Inventory $inventory)
@@ -108,12 +113,16 @@ class InventoryController extends Controller
         $oldQuantity = $inventory->quantity;
         $inventory->add($request->quantity, $request->cost);
 
-        return response()->json([
-            'message' => 'Stock added successfully',
-            'old_quantity' => $oldQuantity,
-            'new_quantity' => $inventory->quantity,
-            'added' => $request->quantity,
-        ]);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json([
+                'message' => 'Stock added successfully',
+                'old_quantity' => $oldQuantity,
+                'new_quantity' => $inventory->quantity,
+                'added' => $request->quantity,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Stock added successfully.');
     }
 
     public function deduct(Request $request, Inventory $inventory)
@@ -140,12 +149,16 @@ class InventoryController extends Controller
             ], 422);
         }
 
-        return response()->json([
-            'message' => 'Stock deducted successfully',
-            'old_quantity' => $oldQuantity,
-            'new_quantity' => $inventory->quantity,
-            'deducted' => $request->quantity,
-        ]);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json([
+                'message' => 'Stock deducted successfully',
+                'old_quantity' => $oldQuantity,
+                'new_quantity' => $inventory->quantity,
+                'deducted' => $request->quantity,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Stock deducted successfully.');
     }
 
     public function getLowStock()

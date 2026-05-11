@@ -50,7 +50,10 @@ class PosSeeder extends Seeder
 
         $createdCategories = [];
         foreach ($categories as $categoryData) {
-            $category = Category::create($categoryData);
+            $category = Category::updateOrCreate(
+                ['slug' => $categoryData['slug']],
+                $categoryData
+            );
             $createdCategories[$category->slug] = $category;
         }
 
@@ -184,15 +187,22 @@ class PosSeeder extends Seeder
 
         $createdProducts = [];
         foreach ($products as $productData) {
-            $product = Product::create($productData);
+            $product = Product::updateOrCreate(
+                ['slug' => $productData['slug']],
+                $productData
+            );
             $createdProducts[$product->slug] = $product;
 
-            // Create inventory record
-            Inventory::create([
-                'quantity' => rand(10, 50),
-                'inventoryable_id' => $product->id,
-                'inventoryable_type' => Product::class,
-            ]);
+            // Create or update inventory record
+            Inventory::updateOrCreate(
+                [
+                    'inventoryable_id' => $product->id,
+                    'inventoryable_type' => Product::class,
+                ],
+                [
+                    'quantity' => rand(10, 50),
+                ]
+            );
         }
 
         // Create product variants for some products
@@ -234,19 +244,26 @@ class PosSeeder extends Seeder
         ];
 
         foreach ($variants as $variantData) {
-            $variant = ProductVariant::create($variantData);
+            $variant = ProductVariant::updateOrCreate(
+                ['sku' => $variantData['sku']],
+                $variantData
+            );
 
-            // Create inventory record for variant
-            Inventory::create([
-                'quantity' => rand(5, 20),
-                'inventoryable_id' => $variant->id,
-                'inventoryable_type' => ProductVariant::class,
-            ]);
+            // Create or update inventory record for variant
+            Inventory::updateOrCreate(
+                [
+                    'inventoryable_id' => $variant->id,
+                    'inventoryable_type' => ProductVariant::class,
+                ],
+                [
+                    'quantity' => rand(5, 20),
+                ]
+            );
         }
 
         $this->command->info('POS seeder completed successfully!');
-        $this->command->info('Created ' . count($categories) . ' categories');
-        $this->command->info('Created ' . count($products) . ' products');
-        $this->command->info('Created ' . count($variants) . ' product variants');
+        $this->command->info('Updated/Created ' . count($categories) . ' categories');
+        $this->command->info('Updated/Created ' . count($products) . ' products');
+        $this->command->info('Updated/Created ' . count($variants) . ' product variants');
     }
 }

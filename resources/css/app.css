@@ -75,4 +75,55 @@
     body {
         @apply bg-background text-foreground;
     }
+
+    /* Remove all default focus outlines for form elements */
+    input:focus,
+    textarea:focus,
+    select:focus,
+    button:focus {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: var(--ring) !important;
+    }
+
+    /* Keep custom ring styles but remove browser defaults */
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+        outline: none !important;
+        border-color: var(--ring) !important;
+    }
+
+    /* Additional browser-specific fixes */
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        appearance: none;
+        margin: 0;
+    }
+
+    input[type=number] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+    /* Remove Firefox focus border */
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible,
+    button:focus-visible {
+        outline: none !important;
+    }
+
+    /* Ensure consistent focus styles across all browsers */
+    .ui-input:focus,
+    .ui-textarea:focus,
+    .ui-select:focus {
+        border-color: hsl(var(--ring)) !important;
+        box-shadow: 0 0 0 1px hsl(var(--ring)) !important;
+    }
 }

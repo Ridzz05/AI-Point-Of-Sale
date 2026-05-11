@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Inventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class ProductController extends Controller
 {
@@ -57,7 +58,22 @@ class ProductController extends Controller
 
         $products = $query->paginate($request->per_page ?? 20);
 
-        return response()->json($products);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json($products);
+        }
+
+        return Inertia::render('products/index', [
+            'products' => $products,
+            'categories' => Category::all(),
+            'filters' => $request->only(['search', 'category_id', 'stock_status']),
+        ]);
+    }
+
+    public function create()
+    {
+        return Inertia::render('products/create', [
+            'categories' => Category::all(['id', 'name']),
+        ]);
     }
 
     public function store(Request $request)
@@ -100,16 +116,32 @@ class ProductController extends Controller
             ]);
         }
 
-        $product->load(['category', 'inventory']);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            $product->load(['category', 'inventory']);
+            return response()->json($product, 201);
+        }
 
-        return response()->json($product, 201);
+        return redirect()->route('products.index')->with('success', 'Product created successfully.');
     }
 
-    public function show(Product $product)
+
+    public function show($id)
     {
-        $product->load(['category', 'inventory', 'activeVariants.inventory']);
+        $product = Product::with(['category', 'inventory', 'activeVariants.inventory'])->find($id);
+        
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
 
         return response()->json($product);
+    }
+
+    public function edit(Product $product)
+    {
+        return Inertia::render('products/edit', [
+            'product' => $product->load(['category', 'inventory']),
+            'categories' => Category::all(['id', 'name']),
+        ]);
     }
 
     public function update(Request $request, Product $product)
@@ -156,7 +188,12 @@ class ProductController extends Controller
 
         $product->load(['category', 'inventory']);
 
-        return response()->json($product);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            $product->load(['category', 'inventory']);
+            return response()->json($product);
+        }
+
+        return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }
 
     public function destroy(Product $product)
@@ -170,11 +207,21 @@ class ProductController extends Controller
 
         $product->delete();
 
-        return response()->json(null, 204);
+        if (request()->wantsJson() && !request()->header('X-Inertia')) {
+            return response()->json(null, 204);
+        }
+
+        return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
     }
 
-    public function adjustStock(Request $request, Product $product)
+    public function adjustStock(Request $request, $id)
     {
+        $product = Product::find($id);
+        
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
         $request->validate([
             'quantity' => 'required|integer|min:0',
             'reason' => 'nullable|string|max:255',

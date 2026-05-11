@@ -4,17 +4,18 @@ import * as React from "react"
 import { 
     House, 
     UsersThree, 
-    Kanban, 
     Receipt, 
     MagicWand, 
     Question, 
     Buildings,
     Storefront,
-    Package
+    Package,
+    Tag,
+    Cube,
+    SquaresFour
 } from "@phosphor-icons/react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavTeams } from "@/components/nav-teams"
 import { NavUser } from "@/components/nav-user"
@@ -23,9 +24,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import {Link, usePage} from "@inertiajs/react";
 import {PageProps} from "@/types";
@@ -52,32 +50,44 @@ const data = {
       isActive: true,
     },
     {
+      title: "Point of Sale",
+      url: route('pos.index'),
+      icon: Storefront,
+    },
+    {
+      title: "Catalog",
+      url: route('products.index'),
+      icon: SquaresFour,
+      items: [
+        {
+          title: "Products",
+          url: route('products.index'),
+          icon: Package,
+        },
+        {
+          title: "Categories",
+          url: route('categories.index'),
+          icon: Tag,
+        },
+        {
+          title: "Inventory",
+          url: route('inventory.index'),
+          icon: Cube,
+        },
+      ],
+    },
+    {
+      title: "Sales & Transactions",
+      url: route('transactions.index'),
+      icon: Receipt,
+    },
+    {
       title: "Customers",
       url: route('customers.index'),
       icon: UsersThree,
     },
     {
-      title: "Projects",
-      url: route('projects.index'),
-      icon: Kanban,
-    },
-    {
-      title: "Transactions",
-      url: route('transactions.index'),
-      icon: Receipt,
-    },
-    {
-      title: "Point of Sale",
-      url: '/pos',
-      icon: Storefront,
-    },
-    {
-      title: "Products",
-      url: '/products',
-      icon: Package,
-    },
-    {
-      title: "AI Assistant",
+      title: "AI Business Assistant",
       url: route('ai.index'),
       icon: MagicWand,
     },
@@ -90,6 +100,7 @@ const data = {
     },
   ],
 }
+
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth } = usePage<PageProps>().props;

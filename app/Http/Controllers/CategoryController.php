@@ -5,18 +5,26 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $categories = Category::withCount('activeProducts')
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
-        return response()->json($categories);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json($categories);
+        }
+
+        return Inertia::render('categories/index', [
+            'categories' => $categories
+        ]);
     }
+
 
     public function store(Request $request)
     {
@@ -37,7 +45,11 @@ class CategoryController extends Controller
             'sort_order' => $request->sort_order ?? 0,
         ]);
 
-        return response()->json($category, 201);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json($category, 201);
+        }
+
+        return redirect()->back()->with('success', 'Category created successfully.');
     }
 
     public function show(Category $category)
@@ -68,7 +80,11 @@ class CategoryController extends Controller
             'is_active' => $request->is_active ?? true,
         ]);
 
-        return response()->json($category);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json($category);
+        }
+
+        return redirect()->back()->with('success', 'Category updated successfully.');
     }
 
     public function destroy(Category $category)
@@ -82,6 +98,10 @@ class CategoryController extends Controller
 
         $category->delete();
 
-        return response()->json(null, 204);
+        if (request()->wantsJson() && !request()->header('X-Inertia')) {
+            return response()->json(null, 204);
+        }
+
+        return redirect()->back()->with('success', 'Category deleted successfully.');
     }
 }

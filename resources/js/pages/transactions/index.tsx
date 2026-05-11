@@ -51,20 +51,17 @@ import { useState, useEffect } from "react"
 interface Transaction {
     id: number;
     customer_id: number;
-    project_id: number | null;
     amount: number;
     status: 'Pending' | 'Paid' | 'Cancelled';
     invoice_url: string | null;
     attachment_path: string | null;
     customer?: { id: number; name: string };
-    project?: { id: number; name: string };
     created_at: string;
 }
 
-export default function Index({ transactions, customers, projects, filters }: PageProps<{ 
+export default function Index({ transactions, customers, filters }: PageProps<{ 
     transactions: Transaction[], 
     customers: {id: number, name: string}[],
-    projects: {id: number, name: string}[],
     filters: { search?: string }
 }>) {
     const [search, setSearch] = useState(filters.search || '');
@@ -73,7 +70,6 @@ export default function Index({ transactions, customers, projects, filters }: Pa
 
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         customer_id: '',
-        project_id: '',
         amount: '',
         status: 'Pending' as Transaction['status'],
         invoice_url: '',
@@ -117,7 +113,6 @@ export default function Index({ transactions, customers, projects, filters }: Pa
         setEditingTransaction(transaction);
         setData({
             customer_id: transaction.customer_id.toString(),
-            project_id: transaction.project_id?.toString() || '',
             amount: transaction.amount.toString(),
             status: transaction.status,
             invoice_url: transaction.invoice_url || '',
@@ -191,24 +186,6 @@ export default function Index({ transactions, customers, projects, filters }: Pa
                                             </SelectContent>
                                         </Select>
                                         {errors.customer_id && <FieldDescription className="text-red-500">{errors.customer_id}</FieldDescription>}
-                                    </Field>
-                                    <Field>
-                                        <FieldLabel htmlFor="project_id">Project (Optional)</FieldLabel>
-                                        <Select
-                                            value={data.project_id}
-                                            onValueChange={value => setData('project_id', value)}
-                                        >
-                                            <SelectTrigger id="project_id">
-                                                <SelectValue placeholder="No Project" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">No Project</SelectItem>
-                                                {projects.map(project => (
-                                                    <SelectItem key={project.id} value={project.id.toString()}>{project.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors.project_id && <FieldDescription className="text-red-500">{errors.project_id}</FieldDescription>}
                                     </Field>
                                     <Field>
                                         <FieldLabel htmlFor="amount">Amount (IDR)</FieldLabel>
@@ -292,14 +269,10 @@ export default function Index({ transactions, customers, projects, filters }: Pa
                                     </Badge>
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-2 text-sm border-y py-3">
+                                <div className="grid grid-cols-1 gap-2 text-sm border-y py-3">
                                     <div>
                                         <p className="text-muted-foreground text-xs">Customer</p>
                                         <p className="font-medium truncate">{transaction.customer?.name || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground text-xs">Project</p>
-                                        <p className="font-medium truncate">{transaction.project?.name || '-'}</p>
                                     </div>
                                 </div>
 
@@ -359,7 +332,6 @@ export default function Index({ transactions, customers, projects, filters }: Pa
                             <TableRow>
                                 <TableHead>Date</TableHead>
                                 <TableHead>Customer</TableHead>
-                                <TableHead>Project</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Docs</TableHead>
@@ -371,7 +343,6 @@ export default function Index({ transactions, customers, projects, filters }: Pa
                                 <TableRow key={transaction.id}>
                                     <TableCell className="text-sm">{new Date(transaction.created_at).toLocaleDateString()}</TableCell>
                                     <TableCell className="font-medium">{transaction.customer?.name || '-'}</TableCell>
-                                    <TableCell className="text-sm">{transaction.project?.name || '-'}</TableCell>
                                     <TableCell>Rp {new Intl.NumberFormat('id-ID').format(transaction.amount)}</TableCell>
                                     <TableCell>
                                         <Badge variant={

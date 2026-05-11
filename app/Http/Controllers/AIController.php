@@ -36,7 +36,7 @@ class AIController extends Controller
 
         $context = $this->getSystemContext();
         
-        try {
+        try {   
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type' => 'application/json',
